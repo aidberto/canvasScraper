@@ -13,12 +13,11 @@ import time
 import requests
 from markitdown import MarkItDown, StreamInfo
 
-DELAY = 0.4  # seconds between requests
+DELAY = 0.4  # seconds between requests, best practice is to not drop below 0.3
 _md = MarkItDown()
 
 
 def load_env(path=".env"):
-    # ponytail: 6-line .env parser; swap for python-dotenv if quoting/multiline ever matters
     if os.path.exists(path):
         for line in open(path):
             line = line.strip()
@@ -70,8 +69,8 @@ class Canvas:
                 continue
             remaining = r.headers.get("X-Rate-Limit-Remaining")
             if remaining and float(remaining) < 50:
-                time.sleep(1)  # ponytail: crude brake, enough for one course
-            return r
+                time.sleep(1)             
+                return r
 
     def get(self, path, params=None):
         url = path if path.startswith("http") else f"{self.base}/api/v1{path}"
@@ -192,6 +191,10 @@ class Exporter:
             try:
                 name = slugify(a["name"])
                 rel = os.path.join("assignments", f"{name}.md")
+                self.assignment_files[a["id"]] = rel
+                # ponytail: file exists = already exported; delete it to force re-export
+                if os.path.exists(os.path.join(self.root, rel)):
+                    continue
                 print(f"  assignments -> {a['name']}")
                 body = html_to_md(a.get("description"))
                 text = f"# {a['name']}\n\n"
@@ -201,7 +204,6 @@ class Exporter:
                     text += f"- **Points:** {a['points_possible']}\n"
                 text += f"- **Canvas URL:** {a.get('html_url', '')}\n\n{body}\n"
                 write_text(os.path.join(self.root, rel), text)
-                self.assignment_files[a["id"]] = rel
                 self.download_embedded_files(a.get("description"))
             except Exception as e:
                 print(f"  WARNING: assignment '{a.get('name')}' failed: {e}")
@@ -228,6 +230,8 @@ class Exporter:
         itype = item["type"]
         fname = f"{i_idx:02d}-{slugify(title)}.md"
         path = os.path.join(mod_dir, fname)
+        if os.path.exists(path):  # ponytail: skip existing; delete file to re-fetch
+            return
         print(f"    {fname} ({itype})")
 
         if itype == "Page":
