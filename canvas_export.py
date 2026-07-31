@@ -69,8 +69,8 @@ class Canvas:
                 continue
             remaining = r.headers.get("X-Rate-Limit-Remaining")
             if remaining and float(remaining) < 50:
-                time.sleep(1)             
-                return r
+                time.sleep(1)  # ponytail: crude brake, enough for one course
+            return r
 
     def get(self, path, params=None):
         url = path if path.startswith("http") else f"{self.base}/api/v1{path}"
