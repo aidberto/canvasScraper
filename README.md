@@ -7,7 +7,7 @@ cp .env.example.env
 ```
 ## Start Scraping
 ```
-venv/bin/python canvas_export.py <course_id>
+.venv/bin/python canvas_export.py <course_id>
 ```
 **NOTE!**
 
